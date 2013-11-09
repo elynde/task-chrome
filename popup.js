@@ -61,7 +61,7 @@
 
 		// Insert a new task record into the table.
 		function insertTask(text) {
-			taskTable.insert({
+			return taskTable.insert({
 				taskname: text,
 				created: new Date(),
 				completed: false
@@ -116,20 +116,18 @@
         cacheRecordsLocally(records);
 				updateList(convertRecords(records));
 
-				// Ensure that future changes update the list.
+				// Cache the records but don't update the list (want completed
+        // tasks to stay where they are)
 				datastore.recordsChanged.addListener(function (e) {
 			    var records = taskTable.query();
           cacheRecordsLocally(records);
-          for (var i = 0; i < records.length; i++) {
-            records[i] = recordForSerialization(records[i]);
-          }
-          updateList(records);
         });
 			});
 		}
 
 		// Set the completed status of a task with the given ID.
 		function setCompleted(id, completed) {
+      $('#'+id).addClass('completed');
 			taskTable.get(id).set('completed', completed);
 		}
 
@@ -170,8 +168,12 @@
 		$('#addForm').submit(function (e) {
 			e.preventDefault();
 			if ($('#newTask').val().length > 0) {
-				insertTask($('#newTask').val());
+				var new_task = insertTask($('#newTask').val());
 				$('#newTask').val('');
+				$('#tasks').prepend(
+          renderTask(new_task.getId(), false, new_task.get('taskname'))
+        );
+        addListeners();
 			}
 			return false;
 		});
